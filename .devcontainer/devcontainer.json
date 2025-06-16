@@ -1,1 +1,29 @@
-
+{
+  "name": "Dynamic Context MCP System",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "18"
+    },
+    "ghcr.io/devcontainers/features/python:1": {
+      "version": "3.11"
+    },
+    "ghcr.io/devcontainers/features/go:1": {
+      "version": "1.21"
+    },
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {}
+  },
+  "postCreateCommand": "chmod +x .devcontainer/setup.sh && bash .devcontainer/setup.sh",
+  "forwardPorts": [3000, 4000, 5000, 7000, 8000],
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-vscode.vscode-json",
+        "esbenp.prettier-vscode",
+        "ms-python.python",
+        "golang.go",
+        "ms-vscode.vscode-typescript-next"
+      ]
+    }
+  }
+}
