@@ -1,15 +1,22 @@
-// dagger/main.go - Initial Development Setup
+// dagger/main.go - Dynamic Context MCP System Pipeline
 package main
 
 import (
 	"context"
-	"dagger/dynamic-context-system/internal/dagger"
 )
 
 type DynamicContextSystem struct{}
 
+// TestDagger - Simple test to verify Dagger is working correctly
+func (m *DynamicContextSystem) TestDagger(ctx context.Context) *Container {
+	return dag.Container().
+		From("alpine:latest").
+		WithExec([]string{"echo", "✅ Dagger test passed!"}).
+		WithExec([]string{"echo", "🎯 Your Dynamic Context MCP System is ready to build"})
+}
+
 // Development - Quick start development environment
-func (m *DynamicContextSystem) Development(ctx context.Context) (*dagger.Service, error) {
+func (m *DynamicContextSystem) Development(ctx context.Context) *Service {
 	// Development container with hot reload and all tools
 	devContainer := dag.Container().
 		From("node:18-alpine").
@@ -30,74 +37,20 @@ func (m *DynamicContextSystem) Development(ctx context.Context) (*dagger.Service
 	devContainer = devContainer.
 		WithExec([]string{"sh", "-c", "[ -f package.json ] && npm install || echo 'No package.json found yet'"})
 
-	return devContainer.AsService(), nil
-}
-
-// DevSetup - Initialize the entire development environment
-func (m *DynamicContextSystem) DevSetup(ctx context.Context) (*dagger.Container, error) {
-	setupContainer := dag.Container().
-		From("node:18-alpine").
-		WithExec([]string{"apk", "add", "--no-cache", "git", "curl", "bash"}).
-		WithWorkdir("/workspace").
-		WithMountedDirectory("/workspace", dag.Host().Directory(".")).
-		WithExec([]string{"npm", "install", "-g", "@vercel/cli", "wrangler"})
-
-	// Create the project structure
-	setupContainer = setupContainer.
-		WithExec([]string{"mkdir", "-p", "packages/graffiti-server"}).
-		WithExec([]string{"mkdir", "-p", "packages/mcp-orchestrator"}).
-		WithExec([]string{"mkdir", "-p", "packages/memory-manager"}).
-		WithExec([]string{"mkdir", "-p", "packages/prompt-engine"}).
-		WithExec([]string{"mkdir", "-p", "packages/agents/context-collector"}).
-		WithExec([]string{"mkdir", "-p", "packages/agents/query-processor"}).
-		WithExec([]string{"mkdir", "-p", "packages/agents/memory-manager"}).
-		WithExec([]string{"mkdir", "-p", "packages/agents/response-generator"}).
-		WithExec([]string{"mkdir", "-p", "packages/agents/improvement-agent"}).
-		WithExec([]string{"mkdir", "-p", "edge-functions/vercel"}).
-		WithExec([]string{"mkdir", "-p", "edge-functions/cloudflare"}).
-		WithExec([]string{"mkdir", "-p", "edge-functions/deno"}).
-		WithExec([]string{"mkdir", "-p", "config"}).
-		WithExec([]string{"mkdir", "-p", "schemas"}).
-		WithExec([]string{"mkdir", "-p", "scripts"})
-
-	return setupContainer, nil
+	return devContainer.AsService()
 }
 
 // QuickStart - Simple container to verify everything is working
-func (m *DynamicContextSystem) QuickStart(ctx context.Context) (*dagger.Container, error) {
+func (m *DynamicContextSystem) QuickStart(ctx context.Context) *Container {
 	// Simple hello world to test Dagger setup
 	return dag.Container().
 		From("alpine:latest").
 		WithExec([]string{"echo", "🚀 Dynamic Context MCP System - Dagger is working!"}).
-		WithExec([]string{"echo", "✅ Ready to build your AI infrastructure"}), nil
-}
-
-// DatabaseServices - Start PostgreSQL and Redis for development
-func (m *DynamicContextSystem) DatabaseServices(ctx context.Context) (*dagger.Service, error) {
-	// PostgreSQL for Graffiti
-	postgres := dag.Container().
-		From("postgres:15-alpine").
-		WithEnvVariable("POSTGRES_DB", "graffiti_dev").
-		WithEnvVariable("POSTGRES_USER", "postgres").
-		WithEnvVariable("POSTGRES_PASSWORD", "password").
-		WithExposedPort(5432)
-
-	// Redis for caching and session management
-	redis := dag.Container().
-		From("redis:7-alpine").
-		WithExposedPort(6379)
-
-	// Return combined service
-	return dag.Container().
-		From("alpine:latest").
-		WithServiceBinding("postgres", postgres.AsService()).
-		WithServiceBinding("redis", redis.AsService()).
-		WithExec([]string{"echo", "Database services started"}).
-		AsService(), nil
+		WithExec([]string{"echo", "✅ Ready to build your AI infrastructure"})
 }
 
 // BasicGraffitiServer - Minimal GraphQL server to get started
-func (m *DynamicContextSystem) BasicGraffitiServer(ctx context.Context) (*dagger.Service, error) {
+func (m *DynamicContextSystem) BasicGraffitiServer(ctx context.Context) *Service {
 	// Create a basic Graffiti server
 	graffitiServer := dag.Container().
 		From("node:18-alpine").
@@ -107,10 +60,9 @@ func (m *DynamicContextSystem) BasicGraffitiServer(ctx context.Context) (*dagger
 			"version": "1.0.0",
 			"main": "server.js",
 			"dependencies": {
-				"@graffiti/server": "^1.0.0",
-				"graphql": "^16.0.0",
-				"apollo-server-express": "^3.0.0",
-				"express": "^4.18.0"
+				"apollo-server-express": "^3.12.0",
+				"express": "^4.18.0",
+				"graphql": "^16.8.0"
 			},
 			"scripts": {
 				"start": "node server.js",
@@ -127,8 +79,7 @@ async function startServer() {
 	const server = new ApolloServer({ 
 		typeDefs, 
 		resolvers,
-		introspection: true,
-		playground: true 
+		introspection: true
 	});
 	
 	await server.start();
@@ -142,10 +93,9 @@ async function startServer() {
 
 startServer().catch(err => console.error('Error starting server:', err));
 		`).
-		WithNewFile("/app/schema.js", `
-const { gql } = require('apollo-server-express');
+		WithNewFile("/app/schema.js", `const { gql } = require('apollo-server-express');
 
-const typeDefs = gql\`
+const typeDefs = gql` + "`" + `
 	type Context {
 		id: ID!
 		content: String!
@@ -174,12 +124,7 @@ const typeDefs = gql\`
 		updateContext(id: ID!, content: String): Context
 		deleteContext(id: ID!): Boolean!
 	}
-
-	type Subscription {
-		contextAdded: Context!
-		contextUpdated: Context!
-	}
-\`;
+` + "`" + `;
 
 const contexts = [];
 let nextId = 1;
@@ -223,21 +168,12 @@ const resolvers = {
 	}
 };
 
-module.exports = { typeDefs, resolvers };
-		`).
+module.exports = { typeDefs, resolvers };`).
 		WithExec([]string{"npm", "install"}).
 		WithEnvVariable("NODE_ENV", "development").
 		WithEnvVariable("PORT", "4000").
 		WithExposedPort(4000).
 		WithExec([]string{"npm", "start"})
 
-	return graffitiServer.AsService(), nil
-}
-
-// TestDagger - Simple test to verify Dagger is working correctly
-func (m *DynamicContextSystem) TestDagger(ctx context.Context) (*dagger.Container, error) {
-	return dag.Container().
-		From("alpine:latest").
-		WithExec([]string{"echo", "✅ Dagger test passed!"}).
-		WithExec([]string{"echo", "🎯 Your Dynamic Context MCP System is ready to build"}), nil
+	return graffitiServer.AsService()
 }
