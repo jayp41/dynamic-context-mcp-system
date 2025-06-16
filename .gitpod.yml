@@ -1,1 +1,90 @@
+# .gitpod.yml - Reliable Gitpod Configuration
+image:
+  file: .gitpod.Dockerfile
 
+tasks:
+  - name: Setup Dynamic Context MCP System
+    init: |
+      echo "🚀 Setting up Dynamic Context MCP System..."
+      
+      # Install Dagger CLI
+      curl -L https://dl.dagger.io/dagger/install.sh | DAGGER_VERSION=0.9.3 sh
+      sudo mv bin/dagger /usr/local/bin
+      rm -rf bin
+      
+      # Verify Dagger installation
+      dagger version
+      
+      # Install global tools
+      npm install -g @vercel/cli wrangler
+      
+      # Create project structure if not exists
+      mkdir -p packages/{graffiti-server,mcp-orchestrator,memory-manager,prompt-engine}
+      mkdir -p packages/agents/{context-collector,query-processor,memory-manager,response-generator,improvement-agent}
+      mkdir -p edge-functions/{vercel,cloudflare,deno}
+      mkdir -p config scripts schemas
+      
+      # Install dependencies if package.json exists
+      if [ -f package.json ]; then
+        npm install
+      fi
+      
+      echo "✅ Setup complete!"
+      echo "🎯 Run 'dagger call test-dagger' to verify everything works"
+    
+    command: |
+      echo "🚀 Dynamic Context MCP System ready!"
+      echo ""
+      echo "Available commands:"
+      echo "  dagger call test-dagger           - Test Dagger setup"
+      echo "  dagger call development up        - Start dev environment"
+      echo "  dagger call basic-graffiti-server up - Start GraphQL server"
+      echo "  make dev                          - Start full dev environment"
+      echo ""
+      echo "🌐 Once running, access services at:"
+      echo "  - GraphQL Playground: https://4000-$GITPOD_WORKSPACE_ID.$GITPOD_WORKSPACE_CLUSTER_HOST/graphql"
+      echo "  - Main App: https://3000-$GITPOD_WORKSPACE_ID.$GITPOD_WORKSPACE_CLUSTER_HOST"
+
+ports:
+  - name: Main App
+    port: 3000
+    onOpen: open-browser
+    description: Main Application
+  - name: GraphQL Server
+    port: 4000
+    onOpen: open-preview
+    description: Graffiti GraphQL Server & Playground
+  - name: MCP Orchestrator
+    port: 5000
+    onOpen: notify
+    description: MCP Agent Orchestrator
+  - name: Prompt Engine
+    port: 7000
+    onOpen: notify
+    description: Dynamic Prompt Engine
+  - name: Memory Service
+    port: 8000
+    onOpen: notify
+    description: Session Memory Service
+  - name: Context Collectors
+    port: 9000-9010
+    onOpen: ignore
+    description: Context Collector Agents
+  - name: Query Processors
+    port: 9100-9110
+    onOpen: ignore
+    description: Query Processor Agents
+
+vscode:
+  extensions:
+    - ms-vscode.vscode-json
+    - bradlc.vscode-tailwindcss
+    - esbenp.prettier-vscode
+    - ms-python.python
+    - golang.go
+    - ms-vscode.vscode-typescript-next
+    - GraphQL.vscode-graphql
+    - ms-azuretools.vscode-docker
+    - ms-vscode.makefile-tools
+
+workspaceLocation: dynamic-context-mcp-system
